@@ -10,5 +10,20 @@ Deno.serve(async (request) => {
     body: request.body,
     redirect: "follow",
   });
-  return await fetch(newRequest);
+
+  const response = await fetch(newRequest);
+  
+  // 检查响应是否支持流式传输
+  if (response.body) {
+    const { readable, writable } = new TransformStream();
+    
+    response.body.pipeTo(writable); // 将响应体传输到可写流
+    return new Response(readable, {
+      headers: response.headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  } else {
+    return response; // 如果没有流式数据，直接返回响应
+  }
 });
